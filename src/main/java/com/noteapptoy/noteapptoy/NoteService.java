@@ -54,10 +54,10 @@ public class NoteService {
         User user = userRepository.findByUsername(userName)
                 .orElseThrow(() -> new UserNotFoundException(userName));
 
+
         if (noteRepository.existsByUserUsernameAndTitle(userName, request.getTitle())) {
             throw new DuplicateNoteTitleException(request.getTitle());
         }
-
         Note note = new Note();
         note.setTitle(request.getTitle());
         note.setContent(request.getContent());
