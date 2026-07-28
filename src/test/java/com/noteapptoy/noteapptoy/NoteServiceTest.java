@@ -8,6 +8,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -253,10 +255,181 @@ class NoteServiceTest {
 
         when(noteRepository.findByUserUsernameAndTitle(username, title)).thenReturn(Optional.empty());
 
-        assertThrows(NoteNotFoundException.class, () -> noteService.getNote(username, title));
+        assertThrows(NoteNotFoundException.class, () -> noteService.getNote(title, username));
 
         verify(noteRepository).findByUserUsernameAndTitle(username, title);
 
+    }
+
+
+    @Test
+    void getAllNotesTest() {
+        String username = "Test Name";
+        User user = new User();
+        user.setUsername(username);
+
+        Note note1 = new Note();
+        note1.setContent("Test Content1");
+        note1.setId(1L);
+        note1.setTitle("Test Title1");
+        note1.setUser(user);
+
+        Note note2 = new Note();
+        note2.setTitle("Test Title2");
+        note2.setId(2L);
+        note2.setContent("Test Content2");
+        note2.setUser(user);
+
+        List<Note> notes = new ArrayList<>();
+        notes.add(note1);
+        notes.add(note2);
+
+        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+
+        when(noteRepository.findAllByUserUsername(username)).thenReturn(notes);
+
+        List<NoteDto> result = noteService.getAllNotes(username);
+
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+
+        NoteDto dto1 = result.get(0);
+        assertEquals(1L, dto1.getId());
+        assertEquals("Test Title1", dto1.getTitle());
+        assertEquals("Test Content1", dto1.getContent());
+
+        NoteDto dto2 = result.get(1);
+        assertEquals(2L, dto2.getId());
+        assertEquals("Test Title2", dto2.getTitle());
+        assertEquals("Test Content2", dto2.getContent());
+
+        verify(userRepository).findByUsername(username);
+        verify(noteRepository).findAllByUserUsername(username);
+
+    }
+
+    @Test
+    void userNotFoundTestForGetAllNotes() {
+        String name = "Test Name";
+
+        when(userRepository.findByUsername(name)).thenReturn(Optional.empty());
+
+        assertThrows(UserNotFoundException.class, () -> noteService.getAllNotes(name));
+
+        verify(userRepository).findByUsername(name);
+    }
+
+    @Test
+    void updatePartNoteJustTitleTest() {
+        String name = "Test Nmae";
+        String title = "Test title";
+        String newTitle = "New title";
+
+        User user = new User();
+        user.setUsername(name);
+
+        PatchNoteDto dto = new PatchNoteDto();
+        dto.setTitle(newTitle);
+
+        Note note = new Note();
+        note.setContent("Test cont");
+        note.setId(1L);
+        note.setTitle(title);
+        note.setUser(user);
+
+        when(noteRepository.existsByUserUsernameAndTitle(name, newTitle)).thenReturn(false);
+        when(noteRepository.findByUserUsernameAndTitle(name, title)).thenReturn(Optional.of(note));
+        when(noteRepository.save(note)).thenReturn(note);
+
+        NoteDto result = noteService.updatePartNote(title, name, dto);
+
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals(newTitle, result.getTitle());
+        assertEquals("Test cont", result.getContent());
+
+        verify(noteRepository).findByUserUsernameAndTitle(name, title);
+        verify(noteRepository).existsByUserUsernameAndTitle(name, newTitle);
+        verify(noteRepository).save(note);
+    }
+
+    @Test
+    void updatePartNoteJustContentTest() {
+        String name = "Test Name";
+        String title = "Test title";
+        String newContent = "New content";
+
+        User user = new User();
+        user.setUsername(name);
+
+        PatchNoteDto dto = new PatchNoteDto();
+        dto.setContent(newContent);
+
+        Note note = new Note();
+        note.setId(1L);
+        note.setTitle(title);
+        note.setContent("Test content");
+        note.setUser(user);
+
+        when(noteRepository.findByUserUsernameAndTitle(name, title))
+                .thenReturn(Optional.of(note));
+        when(noteRepository.save(note))
+                .thenReturn(note);
+
+        NoteDto result = noteService.updatePartNote(title, name, dto);
+
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals(title, result.getTitle());
+        assertEquals(newContent, result.getContent());
+
+        verify(noteRepository).findByUserUsernameAndTitle(name, title);
+        verify(noteRepository).save(note);
+    }
+
+    @Test
+    void newTitleAlreadyUsedForPATCH(){
+        String name = "Test Name";
+        String title = "Test title";
+        String newTitle = "New title";
+
+        User user = new User();
+        user.setUsername(name);
+
+        PatchNoteDto dto = new PatchNoteDto();
+        dto.setTitle(newTitle);
+
+        Note note = new Note();
+        note.setId(1L);
+        note.setTitle(title);
+        note.setContent("Test content");
+        note.setUser(user);
+
+        when(noteRepository.existsByUserUsernameAndTitle(name, newTitle))
+                .thenReturn(true);
+        when(noteRepository.findByUserUsernameAndTitle(name, title))
+                .thenReturn(Optional.of(note));
+
+        assertThrows(DuplicateNoteTitleException.class, () -> noteService.updatePartNote(title, name, dto));
+
+        verify(noteRepository).existsByUserUsernameAndTitle(name, newTitle);
+        verify(noteRepository, never()).save(any(Note.class));
+    }
+
+    @Test
+    void userOrNoteNotExistForPATCH_Test() {
+        PatchNoteDto dto = new PatchNoteDto();
+        dto.setTitle("New Title");
+
+        when(noteRepository.findByUserUsernameAndTitle("Test Name", "Test Title")).thenReturn(Optional.empty());
+
+        assertThrows(NoteNotFoundException.class, () -> {
+            noteService.updatePartNote("Test Title", "Test Name", dto);
+        });
+
+        verify(noteRepository).findByUserUsernameAndTitle("Test Name", "Test Title");
+        verifyNoMoreInteractions(noteRepository);
     }
 
 }

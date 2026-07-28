@@ -80,6 +80,7 @@ public class NoteService {
         if (request.getTitle() != null) {
             note.setTitle(request.getTitle());
         }
+
         if (request.getContent() != null) {
             note.setContent(request.getContent());
         }
