@@ -32,6 +32,9 @@ public class NoteControllerTestRest {
     private UserRepository userRepository;
 
     @Autowired
+    private NoteRepository noteRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
@@ -63,4 +66,32 @@ public class NoteControllerTestRest {
                 .body("content", equalTo("content1"));
 
     }
+
+
+    @Test
+    void shouldThrowIfNoteTitleAlreadyUsed() {
+
+        User user = userRepository.findByUsername("John")
+                .orElseThrow(() -> new UserNotFoundException("John"));
+
+        Note note = new Note();
+        note.setTitle("title1");
+        note.setContent("content1");
+        user.addNote(note);
+        noteRepository.save(note);
+
+        PostNoteRequest request = new PostNoteRequest("title1", "content1");
+
+        given().contentType(ContentType.JSON)
+                .auth().basic("John", "password")
+                .body(request)
+        .when()
+                .post("/notes")
+        .then()
+                .statusCode(409)
+                .body("status", equalTo(409))
+                .body("error", equalTo("Conflict"))
+                .body("message", equalTo("Note with title title1 already exists."));
+    }
+
 }
