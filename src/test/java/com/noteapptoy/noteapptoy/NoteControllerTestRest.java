@@ -94,4 +94,23 @@ public class NoteControllerTestRest {
                 .body("message", equalTo("Note with title title1 already exists."));
     }
 
+    @Test
+    void shouldThrowIfTitleOrContentBlank() {
+        PostNoteRequest request = new PostNoteRequest(null, "content1");
+
+        given().contentType(ContentType.JSON)
+                .auth().basic("John", "password")
+                .body(request)
+        .when()
+                .post("/notes")
+        .then()
+                .statusCode(400)
+                .body("status", equalTo("400"))
+                .body("error", equalTo("Bad Request"))
+                .body("message", equalTo("must not be blank"));
+
+    }
+
+
+
 }
