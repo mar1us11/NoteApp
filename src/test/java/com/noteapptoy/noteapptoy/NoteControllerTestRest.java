@@ -105,12 +105,22 @@ public class NoteControllerTestRest {
                 .post("/notes")
         .then()
                 .statusCode(400)
-                .body("status", equalTo("400"))
+                .body("status", equalTo(400))
                 .body("error", equalTo("Bad Request"))
                 .body("message", equalTo("must not be blank"));
 
     }
 
+    @Test
+    void shouldReturn401WhenNotAuthenticated() {
+        PostNoteRequest request = new PostNoteRequest("title1", "content1");
 
+        given().contentType(ContentType.JSON)
+               .body(request)
+        .when()
+               .post("/notes")
+        .then()
+               .statusCode(401);
+    }
 
 }
