@@ -123,4 +123,26 @@ public class NoteControllerTestRest {
                .statusCode(401);
     }
 
+    @Test
+    void shouldGetNote() {
+        User user = userRepository.findByUsername("John")
+                .orElseThrow(() -> new UserNotFoundException("John"));
+
+        Note note = new Note();
+        note.setTitle("title1");
+        note.setContent("content1");
+        user.addNote(note);
+        noteRepository.save(note);
+
+        given()
+                .auth().basic("John", "password")
+        .when()
+                .get("/notes/title1")
+        .then()
+                .statusCode(200)
+                .body("status", equalTo(200))
+                .body("title", equalTo("title1"))
+                .body("content", equalTo("content1"));
+    }
+
 }
