@@ -3,6 +3,7 @@ package com.noteapptoy.noteapptoy;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -77,7 +79,7 @@ public class NoteControllerTestRest {
 
 
     @Test
-    void shouldThrowIfNoteTitleAlreadyUsed() {
+    void shouldThrowIfNoteTitleAlreadyUsedForPOST() {
 
         User user = userRepository.findByUsername("John")
                 .orElseThrow(() -> new UserNotFoundException("John"));
@@ -103,7 +105,7 @@ public class NoteControllerTestRest {
     }
 
     @Test
-    void shouldThrowIfTitleOrContentBlank() {
+    void shouldThrowIfTitleOrContentBlankForPOST() {
         PostNoteRequest request = new PostNoteRequest(null, "content1");
 
         given().contentType(ContentType.JSON)
@@ -120,7 +122,7 @@ public class NoteControllerTestRest {
     }
 
     @Test
-    void shouldReturn401WhenNotAuthenticated() {
+    void shouldReturn401WhenNotAuthenticatedForPost() {
         PostNoteRequest request = new PostNoteRequest("title1", "content1");
 
         given().contentType(ContentType.JSON)
@@ -150,6 +152,101 @@ public class NoteControllerTestRest {
                 .body("status", equalTo(200))
                 .body("title", equalTo("title1"))
                 .body("content", equalTo("content1"));
+    }
+
+    @Test
+    void shouldThrowIfNotNotExistForGET(){
+
+        authenticatedRequest()
+        .when()
+                .get("/notes/title1")
+        .then()
+                .statusCode(404)
+                .body("status", equalTo(404))
+                .body("error", equalTo("Not Found"))
+                .body("message", equalTo("Note with title title1 not found."));
+    }
+
+    @Test
+    void shouldUpdateNote(){
+        User user = userRepository.findByUsername("John")
+                .orElseThrow(() -> new UserNotFoundException("John"));
+
+        Note note = new Note();
+        note.setContent("content1");
+        note.setTitle("title1");
+
+        user.addNote(note);
+        noteRepository.save(note);
+
+        Note updated = noteRepository.findByUserUsernameAndTitle("John", "title2")
+                .orElseThrow();
+
+        Assertions.assertEquals("content2", updated.getContent());
+
+        CreateNoteRequest request = new CreateNoteRequest("title2", "content2");
+
+        given().contentType(ContentType.JSON)
+                .auth().basic(user.getUsername(), "password")
+                .body(request)
+        .when()
+                .put("/notes/title1")
+        .then()
+                .statusCode(200)
+                .body("status", equalTo(200))
+                .body("title", equalTo("title2"))
+                .body("content", equalTo("content2"));
+
+    }
+
+    @Test
+    void shouldThrowIfNoteNotFoundForPUT() {
+
+        CreateNoteRequest request = new CreateNoteRequest("title2", "content2");
+
+        authenticatedRequest()
+                .body(request)
+        .when()
+                .put("/notes/title1")
+        .then()
+                .statusCode(404)
+                .body("status", equalTo(404))
+                .body("error", equalTo("Not Found"))
+                .body("message", equalTo("Note with title title1 not found."));
+    }
+
+    @Test
+    void shouldDeleteNote() {
+
+        User user = userRepository.findByUsername("John")
+                .orElseThrow(() -> new UserNotFoundException("John"));
+
+        Note note = new Note();
+        note.setContent("content1");
+        note.setTitle("title1");
+
+        user.addNote(note);
+        noteRepository.save(note);
+
+        authenticatedRequest().pathParam("title", "title1")
+        .when()
+                .delete("notes/{title}")
+        .then()
+                .statusCode(204);
+    }
+
+    @Test
+        void shouldThrowWhenNothingToDelete() {
+
+            authenticatedRequest().pathParam("title", "title1")
+            .when()
+                    .delete("notes/{title}")
+            .then()
+                    .statusCode(404)
+                    .body("status", equalTo(404))
+                    .body("error", equalTo("Not Found"))
+                    .body("message", equalTo("Note with title title1 not found."));
+
     }
 
 }
