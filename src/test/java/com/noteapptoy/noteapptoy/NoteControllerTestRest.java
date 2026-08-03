@@ -2,6 +2,7 @@ package com.noteapptoy.noteapptoy;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,12 +52,19 @@ public class NoteControllerTestRest {
     }
 
 
+    private RequestSpecification authenticatedRequest() {
+        return given()
+                .contentType(ContentType.JSON)
+                .auth()
+                .basic("John", "password");
+    }
+
+
     @Test
     void shouldCreateNote() {
         PostNoteRequest postNoteRequest = new PostNoteRequest("title1", "content1");
 
-        given().contentType(ContentType.JSON)
-                .auth().basic("John", "password")
+        authenticatedRequest()
                 .body(postNoteRequest)
         .when()
                 .post("/notes")
@@ -134,8 +142,7 @@ public class NoteControllerTestRest {
         user.addNote(note);
         noteRepository.save(note);
 
-        given()
-                .auth().basic("John", "password")
+        authenticatedRequest()
         .when()
                 .get("/notes/title1")
         .then()
