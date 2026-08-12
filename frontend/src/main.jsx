@@ -68,7 +68,8 @@ function App() {
         const body = await response.json().catch(() => null)
         if (!response.ok) throw new Error(readError(response, body))
       }
-      setSession(credentials)
+      const user = await api('/users/me', {}, credentials)
+      setSession({ username: user.username, password: credentials.password })
       setMessage(mode === 'register' ? 'Account created. Welcome!' : 'Signed in.')
     } catch (err) {
       setError(err.message)
@@ -158,7 +159,7 @@ function App() {
   function signOut() {
     sessionStorage.removeItem('noteapp-session')
     setSession(null); setNotes([]); setSelectedTitle(null); setEditor({ title: '', content: '' })
-    setCredentials({ username: '', password: '' }); setMessage('')
+    setCredentials({ username: '', password: '' }); setMessage(''); setMode('signin')
   }
 
   if (!session) {
@@ -167,12 +168,12 @@ function App() {
         <p className="eyebrow">YOUR NOTES, SIMPLIFIED</p>
         <h1>A calm place for your ideas.</h1>
         <p className="subtle">Sign in to pick up where you left off, or create an account to get started.</p>
-        <div className="tabs"><button className={mode === 'signin' ? 'active' : ''} onClick={() => setMode('signin')}>Sign in</button><button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Create account</button></div>
+        <div className="tabs"><button id="signInTab" className={mode === 'signin' ? 'active' : ''} onClick={() => setMode('signin')}>Sign in</button><button  id="createAccountTab" className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Create account</button></div>
         <form onSubmit={submitAuth} className="stack">
-          <label>Username<input minLength="3" maxLength="50" required value={credentials.username} onChange={(e) => setCredentials({ ...credentials, username: e.target.value })} /></label>
-          <label>Password<input type="password" minLength="8" maxLength="100" required value={credentials.password} onChange={(e) => setCredentials({ ...credentials, password: e.target.value })} /></label>
+          <label>Username<input id="username" minLength="3" maxLength="50" required value={credentials.username} onChange={(e) => setCredentials({ ...credentials, username: e.target.value })} /></label>
+          <label>Password<input id="password" type="password" minLength="8" maxLength="100" required value={credentials.password} onChange={(e) => setCredentials({ ...credentials, password: e.target.value })} /></label>
           {error && <p className="notice error">{error}</p>}
-          <button className="primary" disabled={busy}>{busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}</button>
+          <button id="loginButton" className="primary" disabled={busy}>{busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}</button>
         </form>
       </section>
     </main>
@@ -180,21 +181,21 @@ function App() {
 
   return <main className="app-shell">
     <aside className="sidebar">
-      <div><p className="eyebrow">NOTES</p><h1>Hi, {session.username}</h1></div>
-      <button className="primary" onClick={newNote}>+ New note</button>
-      <nav className="note-list">
+      <div><p className="eyebrow">NOTES</p><h1 id="greeting">Hi, {session.username}</h1></div>
+      <button id="newNoteButton" className="primary" onClick={newNote}>+ New note</button>
+      <nav id="notesList" className="note-list">
         {notes.length === 0 && <p className="subtle">No notes yet. Create your first one.</p>}
-        {notes.map((note) => <button key={note.id} className={selectedTitle === note.title ? 'note-item selected' : 'note-item'} onClick={() => chooseNote(note)}><strong>{note.title}</strong><span>{note.content || 'Empty note'}</span></button>)}
+        {notes.map((note) => <button id={`note-${note.id}`} data-note-title={note.title} key={note.id} className={selectedTitle === note.title ? 'note-item selected' : 'note-item'} onClick={() => chooseNote(note)}><strong>{note.title}</strong><span>{note.content || 'Empty note'}</span></button>)}
       </nav>
-      <details className="account"><summary>Account settings</summary><form onSubmit={saveAccount} className="stack compact"><label>Username<input minLength="3" maxLength="50" required value={account.username} onChange={(e) => setAccount({ ...account, username: e.target.value })} /></label><label>New password <small>(leave blank to keep it)</small><input type="password" minLength="8" maxLength="100" value={account.password} onChange={(e) => setAccount({ ...account, password: e.target.value })} /></label><button disabled={busy}>Save account</button></form><button className="danger link" onClick={deleteAccount} disabled={busy}>Delete account</button></details>
-      <button className="link" onClick={signOut}>Sign out</button>
+      <details id="accountSettings" className="account"><summary>Account settings</summary><form onSubmit={saveAccount} className="stack compact"><label>Username<input id="accountUsernameInput" minLength="3" maxLength="50" required value={account.username} onChange={(e) => setAccount({ ...account, username: e.target.value })} /></label><label>New password <small>(leave blank to keep it)</small><input id="accountPasswordInput" type="password" minLength="8" maxLength="100" value={account.password} onChange={(e) => setAccount({ ...account, password: e.target.value })} /></label><button id="saveAccountButton" disabled={busy}>Save account</button></form><button id="deleteAccountButton" className="danger link" onClick={deleteAccount} disabled={busy}>Delete account</button></details>
+      <button id="signOutButton" className="link" onClick={signOut}>Sign out</button>
     </aside>
     <section className="workspace">
       <div className="status">{error && <p className="notice error">{error}</p>}{message && <p className="notice success">{message}</p>}</div>
       <form className="editor" onSubmit={saveNote}>
-        <input className="title-input" placeholder="Untitled note" minLength="1" required value={editor.title} onChange={(e) => setEditor({ ...editor, title: e.target.value })} />
-        <textarea placeholder="Write something…" minLength="1" required value={editor.content} onChange={(e) => setEditor({ ...editor, content: e.target.value })} />
-        <div className="editor-actions"><span>{selectedNote ? 'Editing saved note' : 'New note'}</span><div>{selectedTitle && <button type="button" className="danger" onClick={removeNote} disabled={busy}>Delete</button>}<button className="primary" disabled={busy}>{busy ? 'Saving…' : 'Save note'}</button></div></div>
+        <input id="noteTitleInput" className="title-input" placeholder="Untitled note" minLength="1" required value={editor.title} onChange={(e) => setEditor({ ...editor, title: e.target.value })} />
+        <textarea id="noteContentInput" placeholder="Write something…" minLength="1" required value={editor.content} onChange={(e) => setEditor({ ...editor, content: e.target.value })} />
+        <div className="editor-actions"><span>{selectedNote ? 'Editing saved note' : 'New note'}</span><div>{selectedTitle && <button id="deleteNoteButton" type="button" className="danger" onClick={removeNote} disabled={busy}>Delete</button>}<button id="saveNoteButton" className="primary" disabled={busy}>{busy ? 'Saving…' : 'Save note'}</button></div></div>
       </form>
     </section>
   </main>
