@@ -10,6 +10,9 @@ import java.time.Duration;
 
 public class LoginPage {
 
+    private static final String BASE_URL =
+            System.getProperty("e2e.baseUrl", "http://localhost:3000");
+
     private final WebDriver driver;
     private final WebDriverWait wait;
 
@@ -28,7 +31,7 @@ public class LoginPage {
 
 
     public LoginPage open() {
-        driver.get("http://localhost:3000");
+        driver.get(BASE_URL);
         wait.until(ExpectedConditions.visibilityOfElementLocated(usernameInput));
         return this;
     }
