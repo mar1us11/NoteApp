@@ -130,7 +130,6 @@ public class NotesPage {
     public NotesPage pressChangeAccountUsername(String newName){
         WebElement input = wait.until(
                 ExpectedConditions.elementToBeClickable(accountUsernameInput)
-                //driver.findElement(accountUsernameInput)
         );
 
         input.clear();
@@ -142,7 +141,6 @@ public class NotesPage {
     public NotesPage pressChangeAccountPassword(String newPass){
         wait.until(
                 ExpectedConditions.elementToBeClickable(accountPasswordInput)
-                //driver.findElement(accountPasswordInput).sendKeys(newPass)
         ).sendKeys(newPass);
         return this;
     }
@@ -150,7 +148,6 @@ public class NotesPage {
     public NotesPage pressSaveAccountChanges(){
         wait.until(
                 ExpectedConditions.elementToBeClickable(saveAccountButton)
-                //driver.findElement(saveAccountButton).click()
         ).click();
 
         return this;

@@ -17,7 +17,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
