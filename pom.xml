@@ -243,9 +243,10 @@
                         <configuration>
                             <async>true</async>
                             <asyncDestroyOnShutdown>true</asyncDestroyOnShutdown>
-                            <executable>${npm.executable}</executable>
+                            <executable>${frontend.dir}/node/node</executable>
                             <workingDirectory>${frontend.dir}</workingDirectory>
                             <arguments>
+                                <argument>${npm.executable}</argument>
                                 <argument>run</argument>
                                 <argument>preview</argument>
                                 <argument>--</argument>
