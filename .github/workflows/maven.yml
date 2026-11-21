@@ -21,4 +21,4 @@ jobs:
       - uses: browser-actions/setup-chrome@v1
 
       - name: Run all tests
-        run: ./mvnw -B verify
+        run: mvn -B verify
