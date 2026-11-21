@@ -246,7 +246,7 @@
                             <executable>${frontend.dir}/node/node</executable>
                             <workingDirectory>${frontend.dir}</workingDirectory>
                             <arguments>
-                                <argument>${npm.executable}</argument>
+                                <argument>${frontend.dir}/node/node_modules/npm/bin/npm-cli.js</argument>
                                 <argument>run</argument>
                                 <argument>preview</argument>
                                 <argument>--</argument>
